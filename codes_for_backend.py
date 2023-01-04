@@ -7,34 +7,37 @@ Original file is located at
     https://colab.research.google.com/drive/1KiutX6ottVd8_RVvRrZPadqkxL_0j_-Y
 """
 
+import sys
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize, word_tokenize
 import nltk
 import numpy as np
 import pandas as pd
 import re
+from io import BytesIO
+import base64
 
 from sklearn import preprocessing
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix,classification_report, f1_score, recall_score, accuracy_score, precision_score
+from sklearn.metrics import confusion_matrix, classification_report, f1_score, recall_score, accuracy_score, precision_score
 
 from imblearn.over_sampling import RandomOverSampler
 
 nltk.download("punkt")
 nltk.download('stopwords')
 
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.corpus import stopwords
+# print(sys.argv[1])
 
-from google.colab import drive
-drive.mount('/content/drive') 
+df = pd.read_csv("test.csv")
 
-df = pd.read_csv("/content/drive/MyDrive/DeGatto Project/EDA + Models/Womens Clothing E-Commerce Reviews.csv")
+df = df.drop(["Unnamed: 0", "Clothing ID", "Age", "Title", "Positive Feedback Count",
+             "Division Name", "Department Name", "Class Name"], axis=1)
+df.dropna(inplace=True)
 
-df = df.drop(["Unnamed: 0", "Clothing ID","Age", "Title", "Positive Feedback Count", "Division Name", "Department Name", "Class Name"], axis = 1)
-df.dropna(inplace = True)
 
-def categorise(row):  
+def categorise(row):
     if row['Rating'] >= 4 and row['Recommended IND'] == 1:
         return 'Positive'
     elif row['Rating'] >= 4 and row['Recommended IND'] == 0:
@@ -46,55 +49,58 @@ def categorise(row):
     elif row['Rating'] <= 2 and row['Recommended IND'] == 0:
         return 'Negative'
 
-df['Sentiment'] = df.apply(lambda row: categorise(row), axis = 1)
 
-df.drop(['Rating', 'Recommended IND'], axis = 1, inplace = True)
+df['Sentiment'] = df.apply(lambda row: categorise(row), axis=1)
+
+df.drop(['Rating', 'Recommended IND'], axis=1, inplace=True)
 
 reviews = df['Review Text'].str.strip()
 
 NON_ALPHANUM = re.compile(r'[\W]')
 NON_ASCII = re.compile(r'[^a-z0-1\s]')
 
+
 def normalize_texts(texts):
     normalized_texts = []
 
     for text in texts:
-        ## Lower Casing
+        # Lower Casing
         lower = str(text).lower()
 
-        ## Removing Punctuations
+        # Removing Punctuations
         no_punctuation = NON_ALPHANUM.sub(r' ', lower)
 
-        ## Removing NON_ASCII values
+        # Removing NON_ASCII values
         no_non_ascii = NON_ASCII.sub(r'', no_punctuation)
 
-        ## Removing numbers
-        no_num = re.sub('\W+','', no_non_ascii )
+        # Removing numbers
+        no_num = re.sub('\W+', '', no_non_ascii)
 
-        ## appending to the list
+        # appending to the list
         normalized_texts.append(no_non_ascii)
 
     return normalized_texts
-        
+
+
 df['Review Text'] = normalize_texts(df['Review Text'])
 
-## Replacing the multiple whitespaces with just one
+# Replacing the multiple whitespaces with just one
 df["Review Text"] = df["Review Text"].replace(r'\s+', ' ', regex=True)
 
 x = df["Review Text"]
 y = df["Sentiment"]
 
 vectorizer = CountVectorizer()
-over = RandomOverSampler(sampling_strategy = 'all', random_state = 45)
+over = RandomOverSampler(sampling_strategy='all', random_state=45)
 
 x = vectorizer.fit_transform(x)
 x, y = over.fit_resample(x, y)
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.1, 
-                                                    stratify = y, random_state = 42)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1,
+                                                    stratify=y, random_state=42)
 
-log = LogisticRegression(C = 2, max_iter = 500, class_weight = 'balanced',
-                         random_state = 42)
+log = LogisticRegression(C=2, max_iter=500, class_weight='balanced',
+                         random_state=42)
 
 log.fit(x_train, y_train)
 y_pred_test = log.predict(x_test)
@@ -102,3 +108,6 @@ y_pred_train = log.predict(x_train)
 
 acc_test = accuracy_score(y_test, y_pred_test)
 acc_train = accuracy_score(y_train, y_pred_train)
+
+print(acc_test)
+sys.stdout.flush()
