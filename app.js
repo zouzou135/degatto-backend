@@ -16,12 +16,16 @@ var file_base64 = null;
 
 app.post("/process-data", function (req, res) {
   const spawn = require("child_process").spawn;
-  const pythonProcess = spawn("python3", ["codes_for_backend.py"]);
+  const pythonProcess = spawn("python3", ["sentiment_code.py"]);
 
-  var acc_test = 0.0;
+  var sentiment_data = [];
   pythonProcess.stdout.on("data", (data) => {
     console.log(data.toString());
-    acc_test = parseFloat(data.toString());
+    if (data.toString() != "") {
+      if (data.toString()[0] == "[") {
+        sentiment_data = JSON.parse(data.toString());
+      }
+    }
   });
 
   pythonProcess.stderr.on("data", (data) => {
@@ -36,7 +40,7 @@ app.post("/process-data", function (req, res) {
     if (code == 0) {
       res.send({
         success: true,
-        acc_test: acc_test,
+        sentiment_data: sentiment_data,
       });
     } else {
       res.send({
