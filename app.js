@@ -18,10 +18,6 @@ var file_base64 = null;
 app.post("/process-data", function (req, res) {
   const spawn = require("child_process").spawn;
   const pythonProcess = spawn("python3", ["sentiment_code.py"]);
-  const pythonProcessMaterial = spawn("python3", ["material_code.py"]);
-  const pythonProcessComfort = spawn("python3", ["comfort_code.py"]);
-  const pythonProcessDesign = spawn("python3", ["design_code.py"]);
-  const pythonProcessSize = spawn("python3", ["size_code.py"]);
 
   var sentiment_data = [];
   pythonProcess.stdout.on("data", (data) => {
@@ -29,46 +25,6 @@ app.post("/process-data", function (req, res) {
     if (data.toString() != "") {
       if (data.toString()[0] == "[") {
         sentiment_data = JSON.parse(data.toString());
-      }
-    }
-  });
-
-  var material_data = [];
-  pythonProcessMaterial.stdout.on("data", (data) => {
-    console.log(data.toString());
-    if (data.toString() != "") {
-      if (data.toString()[0] == "[") {
-        material_data = JSON.parse(data.toString());
-      }
-    }
-  });
-
-  var comfort_data = [];
-  pythonProcessComfort.stdout.on("data", (data) => {
-    console.log(data.toString());
-    if (data.toString() != "") {
-      if (data.toString()[0] == "[") {
-        comfort_data = JSON.parse(data.toString());
-      }
-    }
-  });
-
-  var design_data = [];
-  pythonProcessDesign.stdout.on("data", (data) => {
-    console.log(data.toString());
-    if (data.toString() != "") {
-      if (data.toString()[0] == "[") {
-        design_data = JSON.parse(data.toString());
-      }
-    }
-  });
-
-  var size_data = [];
-  pythonProcessSize.stdout.on("data", (data) => {
-    console.log(data.toString());
-    if (data.toString() != "") {
-      if (data.toString()[0] == "[") {
-        size_data = JSON.parse(data.toString());
       }
     }
   });
@@ -86,139 +42,119 @@ app.post("/process-data", function (req, res) {
   var designDone = false;
   var sizeDone = false;
 
-  pythonProcessSize.on("exit", (code) => {
-    console.log("exit Size", code);
-    if (code == 0) {
-      sizeDone = true;
-
-      if (
-        sentenceDone &&
-        materialDone &&
-        comfortDone &&
-        designDone &&
-        sizeDone
-      ) {
-        res.send({
-          success: true,
-          sentiment_data: sentiment_data,
-          material_data: material_data,
-          comfort_data: comfort_data,
-          design_data: design_data,
-          size_data: size_data,
-        });
-      }
-    } else {
-      res.send({
-        success: false,
-      });
-    }
-  });
-
-  pythonProcessDesign.on("exit", (code) => {
-    console.log("exit Design", code);
-    if (code == 0) {
-      designDone = true;
-
-      if (
-        sentenceDone &&
-        materialDone &&
-        comfortDone &&
-        designDone &&
-        sizeDone
-      ) {
-        res.send({
-          success: true,
-          sentiment_data: sentiment_data,
-          material_data: material_data,
-          comfort_data: comfort_data,
-          design_data: design_data,
-          size_data: size_data,
-        });
-      }
-    } else {
-      res.send({
-        success: false,
-      });
-    }
-  });
-
-  pythonProcessComfort.on("exit", (code) => {
-    console.log("exit Comfort", code);
-    if (code == 0) {
-      comfortDone = true;
-
-      if (
-        sentenceDone &&
-        materialDone &&
-        comfortDone &&
-        designDone &&
-        sizeDone
-      ) {
-        res.send({
-          success: true,
-          sentiment_data: sentiment_data,
-          material_data: material_data,
-          comfort_data: comfort_data,
-          design_data: design_data,
-          size_data: size_data,
-        });
-      }
-    } else {
-      res.send({
-        success: false,
-      });
-    }
-  });
-
-  pythonProcessMaterial.on("exit", (code) => {
-    console.log("exit Material", code);
-    if (code == 0) {
-      materialDone = true;
-
-      if (
-        sentenceDone &&
-        materialDone &&
-        comfortDone &&
-        designDone &&
-        sizeDone
-      ) {
-        res.send({
-          success: true,
-          sentiment_data: sentiment_data,
-          material_data: material_data,
-          comfort_data: comfort_data,
-          design_data: design_data,
-          size_data: size_data,
-        });
-      }
-    } else {
-      res.send({
-        success: false,
-      });
-    }
-  });
-
   pythonProcess.on("exit", (code) => {
     console.log("exit", code);
     if (code == 0) {
       sentenceDone = true;
 
-      if (
-        sentenceDone &&
-        materialDone &&
-        comfortDone &&
-        designDone &&
-        sizeDone
-      ) {
-        res.send({
-          success: true,
-          sentiment_data: sentiment_data,
-          material_data: material_data,
-          comfort_data: comfort_data,
-          design_data: design_data,
-          size_data: size_data,
-        });
-      }
+      const pythonProcessMaterial = spawn("python3", ["material_code.py"]);
+
+      pythonProcessMaterial.on("exit", (code) => {
+        console.log("exit Material", code);
+        if (code == 0) {
+          materialDone = true;
+
+          var material_data = [];
+          pythonProcessMaterial.stdout.on("data", (data) => {
+            console.log(data.toString());
+            if (data.toString() != "") {
+              if (data.toString()[0] == "[") {
+                material_data = JSON.parse(data.toString());
+              }
+            }
+          });
+
+          const pythonProcessComfort = spawn("python3", ["comfort_code.py"]);
+
+          var comfort_data = [];
+          pythonProcessComfort.stdout.on("data", (data) => {
+            console.log(data.toString());
+            if (data.toString() != "") {
+              if (data.toString()[0] == "[") {
+                comfort_data = JSON.parse(data.toString());
+              }
+            }
+          });
+
+          pythonProcessComfort.on("exit", (code) => {
+            console.log("exit Comfort", code);
+            if (code == 0) {
+              comfortDone = true;
+
+              const pythonProcessDesign = spawn("python3", ["design_code.py"]);
+
+              var design_data = [];
+              pythonProcessDesign.stdout.on("data", (data) => {
+                console.log(data.toString());
+                if (data.toString() != "") {
+                  if (data.toString()[0] == "[") {
+                    design_data = JSON.parse(data.toString());
+                  }
+                }
+              });
+
+              pythonProcessDesign.on("exit", (code) => {
+                console.log("exit Design", code);
+                if (code == 0) {
+                  designDone = true;
+
+                  const pythonProcessSize = spawn("python3", ["size_code.py"]);
+
+                  var size_data = [];
+                  pythonProcessSize.stdout.on("data", (data) => {
+                    console.log(data.toString());
+                    if (data.toString() != "") {
+                      if (data.toString()[0] == "[") {
+                        size_data = JSON.parse(data.toString());
+                      }
+                    }
+                  });
+
+                  pythonProcessSize.on("exit", (code) => {
+                    console.log("exit Size", code);
+                    if (code == 0) {
+                      sizeDone = true;
+
+                      if (
+                        sentenceDone &&
+                        materialDone &&
+                        comfortDone &&
+                        designDone &&
+                        sizeDone
+                      ) {
+                        res.send({
+                          success: true,
+                          sentiment_data: sentiment_data,
+                          material_data: material_data,
+                          comfort_data: comfort_data,
+                          design_data: design_data,
+                          size_data: size_data,
+                        });
+                      }
+                    } else {
+                      res.send({
+                        success: false,
+                      });
+                    }
+                  });
+                } else {
+                  res.send({
+                    success: false,
+                  });
+                }
+              });
+            } else {
+              res.send({
+                success: false,
+              });
+            }
+          });
+        } else {
+          res.send({
+            success: false,
+          });
+        }
+      });
     } else {
       res.send({
         success: false,
